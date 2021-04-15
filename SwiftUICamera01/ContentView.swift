@@ -15,36 +15,57 @@ struct ContentView: View {
     }
 }
 
-struct CameraView: UIViewControllerRepresentable {
-	func makeUIViewController(context: Context) -> ViewController {
-		ViewController()
+struct CameraView: UIViewRepresentable {
+	func makeUIView(context: Context) -> UIView {
+		CameraBaseView()
 	}
 
-	func updateUIViewController(_ uiViewController: ViewController, context: Context) {
-	}
+	func updateUIView(_ uiView: UIViewType, context: Context) {}
 }
 
-class ViewController: UIViewController {
-	override func viewDidLoad() {
-		super.viewDidLoad()
+class CameraBaseView: UIView {
+	override func layoutSubviews() {
+		super.layoutSubviews()
+
+		_ = initCaptureSession
+
+		if let previewLayer = layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
+			previewLayer.videoGravity = .resizeAspectFill
+			previewLayer.connection?.videoOrientation = UIDevice.current.orientation.video
+			previewLayer.frame = frame
+		}
+	}
+
+	lazy var initCaptureSession: Void = {
+		guard let device = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera],
+															mediaType: .video,
+															position: .unspecified)
+				.devices.first(where: { $0.position == .front }),
+			  let input = try? AVCaptureDeviceInput(device: device) else { return }
 
 		let session = AVCaptureSession()
 		session.sessionPreset = .photo
+		session.addInput(input)
+		session.startRunning()
 
-		if let device = AVCaptureDevice.DiscoverySession(deviceTypes: [.builtInWideAngleCamera],
-													  mediaType: .video,
-													  position: .unspecified)
-			.devices.first(where: { $0.position == .front }),
-		   let input = try? AVCaptureDeviceInput(device: device) {
-			session.addInput(input)
+		layer.insertSublayer(AVCaptureVideoPreviewLayer(session: session), at: 0)
+	}()
+}
 
-			let layer = AVCaptureVideoPreviewLayer(session: session)
-			layer.videoGravity = .resizeAspectFill
-			layer.connection?.videoOrientation = .portrait
-			layer.frame = view.frame
-			view.layer.insertSublayer(layer, at: 0)
-
-			session.startRunning()
+extension UIDeviceOrientation {
+	var video: AVCaptureVideoOrientation {
+		print(self.rawValue)
+		switch self {
+		case .portrait:
+			return .portrait
+		case .portraitUpsideDown:
+			return .portraitUpsideDown
+		case .landscapeRight:
+			return .landscapeLeft
+		case .landscapeLeft:
+			return .landscapeRight
+		default:
+			return .portrait
 		}
 	}
 }
