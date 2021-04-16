@@ -16,24 +16,15 @@ struct ContentView: View {
 }
 
 struct CameraView: UIViewRepresentable {
-	func makeUIView(context: Context) -> UIView {
-		CameraBaseView()
-	}
-
+	func makeUIView(context: Context) -> UIView { BaseCameraView() }
 	func updateUIView(_ uiView: UIViewType, context: Context) {}
 }
 
-class CameraBaseView: UIView {
+class BaseCameraView: UIView {
 	override func layoutSubviews() {
 		super.layoutSubviews()
-
 		_ = initCaptureSession
-
-		if let previewLayer = layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
-			previewLayer.videoGravity = .resizeAspectFill
-			previewLayer.connection?.videoOrientation = UIDevice.current.orientation.video
-			previewLayer.frame = frame
-		}
+		(layer.sublayers?.first as? AVCaptureVideoPreviewLayer)?.frame = frame
 	}
 
 	lazy var initCaptureSession: Void = {
@@ -44,30 +35,11 @@ class CameraBaseView: UIView {
 			  let input = try? AVCaptureDeviceInput(device: device) else { return }
 
 		let session = AVCaptureSession()
-		session.sessionPreset = .photo
 		session.addInput(input)
 		session.startRunning()
 
 		layer.insertSublayer(AVCaptureVideoPreviewLayer(session: session), at: 0)
 	}()
-}
-
-extension UIDeviceOrientation {
-	var video: AVCaptureVideoOrientation {
-		print(self.rawValue)
-		switch self {
-		case .portrait:
-			return .portrait
-		case .portraitUpsideDown:
-			return .portraitUpsideDown
-		case .landscapeRight:
-			return .landscapeLeft
-		case .landscapeLeft:
-			return .landscapeRight
-		default:
-			return .portrait
-		}
-	}
 }
 
 struct ContentView_Previews: PreviewProvider {
